@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_company_form_invoice_header" model="ir.ui.view">
+        <field name="name">res.company.form.invoice.header</field>
+        <field name="model">res.company</field>
+        <field name="inherit_id" ref="base.view_company_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//notebook" position="inside">
+                <page string="Report Images" name="cp_invoice_images">
+
+                    <separator string="Invoice / Report Header Image"/>
+                    <group>
+                        <field name="invoice_header_image"
+                               widget="image"
+                               nolabel="1"
+                               options="{'size': [1200, 160]}"
+                               help="Displayed full-width at the top of every PDF page."/>
+                    </group>
+
+                    <separator string="Invoice / Report Footer Image"/>
+                    <group>
+                        <field name="invoice_footer_image"
+                               widget="image"
+                               nolabel="1"
+                               options="{'size': [1200, 80]}"
+                               help="Displayed full-width at the bottom of every PDF page."/>
+                    </group>
+
+                </page>
+            </xpath>
+        </field>
+    </record>
+</odoo>

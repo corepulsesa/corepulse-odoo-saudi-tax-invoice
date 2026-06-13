@@ -1,0 +1,518 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="paperformat_custom_invoice" model="report.paperformat">
+        <field name="name">Custom Invoice Format</field>
+        <field name="default" eval="False"/>
+        <field name="format">A4</field>
+        <field name="page_height">0</field>
+        <field name="page_width">0</field>
+        <field name="orientation">Portrait</field>
+        <field name="margin_top">5</field>
+        <field name="margin_bottom">40</field>
+        <field name="margin_left">5</field>
+        <field name="margin_right">5</field>
+        <field name="header_line" eval="False"/>
+        <field name="header_spacing">0</field>
+        <field name="dpi">90</field>
+    </record>
+
+    <record id="account_invoices_custom" model="ir.actions.report">
+        <field name="name">Custom Invoice</field>
+        <field name="model">account.move</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">corepulse_tax_invoice_print.report_invoice_document_custom_complete</field>
+        <field name="report_file">corepulse_tax_invoice_print.report_invoice_document_custom_complete</field>
+        <field name="print_report_name">'Invoice - %s' % (object.name)</field>
+        <field name="paperformat_id" ref="paperformat_custom_invoice"/>
+    </record>
+
+    <template id="report_invoice_document_custom_complete">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="o">
+                <t t-call="corepulse_tax_invoice_print.report_invoice_document_custom_layout" t-lang="o.partner_id.lang"/>
+            </t>
+        </t>
+    </template>
+
+    <template id="report_invoice_document_custom_layout">
+        <t t-call="web.basic_layout">
+            <style>article.page, div.page { border: none !important; box-shadow: none !important; }</style>
+            <t t-set="o" t-value="o.with_context(lang=o.partner_id.lang)"/>
+
+            <t t-set="data_report_margin_bottom" t-value="40"/>
+            <div t-attf-class="footer o_background_footer" style="margin:0; padding:0; font-size:9pt; font-family:Arial,sans-serif;">
+                <t t-if="o.company_id.invoice_footer_image">
+                    <img t-att-src="image_data_uri(o.company_id.invoice_footer_image)"
+                         style="width:100%; height:auto; display:block;" alt="Footer"/>
+                </t>
+                <div style="padding:3px 10px; width:100%; overflow:hidden;">
+                    <span style="float:left;">
+                        <span t-esc="context_timestamp(datetime.datetime.now()).strftime('%d %B %Y')"/>
+                    </span>
+                    <span style="float:left; margin-left:20px; white-space:nowrap;">
+                        <span class="page"/><span> / </span><span class="topage"/>
+                    </span>
+                </div>
+            </div>
+
+            <style>
+                /* ══════════════════════════════════════════════════
+                   Arabic font via local static file
+                   Using !important to override other modules
+                ══════════════════════════════════════════════════ */
+                @font-face {
+                    font-family: 'Tajawal';
+                    src: url('/corepulse_tax_invoice_print/static/fonts/Tajawal-Regular.ttf') format('truetype');
+                    font-weight: 400;
+                    font-style: normal;
+                    font-display: swap;
+                }
+                @font-face {
+                    font-family: 'Tajawal';
+                    src: url('/corepulse_tax_invoice_print/static/fonts/Tajawal-Bold.ttf') format('truetype');
+                    font-weight: 700;
+                    font-style: normal;
+                    font-display: swap;
+                }
+
+                @page { margin: 0mm; }
+                * { box-sizing: border-box; }
+
+                body > div, body > div > div,
+                .page { border: 0 !important; border-radius: 0 !important; box-shadow: none !important; margin: 0 !important; }
+                .card, .card-body { border: 0 !important; box-shadow: none !important; padding: 0 !important; }
+                .container-fluid, .container { border: 0 !important; padding: 0 !important; }
+                .page, .page > *, #wrapwrap, .container, .o_layout,
+                div.page, div.page > div, div.page > table {
+                    border: none !important; box-shadow: none !important;
+                    outline: none !important; background: transparent;
+                }
+                table { border: none; }
+                .page { padding: 0 !important; margin: 0 !important; border: none !important;
+                        box-shadow: none !important; outline: none !important; }
+                body { font-family: Arial, sans-serif !important; font-size: 10pt; border: none !important; }
+                .wrap { padding: 0 10px; font-family: Arial, sans-serif !important; }
+                .wrap table { border-collapse: collapse; direction: ltr; border-spacing: 0; }
+                thead tr th, thead tr td { margin: 0; }
+                thead { border-spacing: 0; margin: 0; padding: 0; }
+                .orange th, .orange td { border: none; }
+                ol, ul, li { list-style: none !important; counter-reset: none !important; }
+                .wrap * { counter-increment: none; }
+                td, th { counter-reset: none !important; counter-increment: none !important; }
+
+                /* ══════════════════════════════════════════════════
+                   UNIFIED FONT SCALE — English = Arabic, same size
+                   ─ Title:           13pt bold
+                   ─ Labels/values:   10pt  (bold for labels)
+                   ─ Col headers:      9pt bold
+                   ─ Line item data:   9pt
+                   ─ Totals:          10pt  (bold for labels)
+                   ─ Amount words:     9pt
+                   ─ Footer:          10pt bold
+                ══════════════════════════════════════════════════ */
+
+                .title-en  { font-size: 13pt; font-weight: bold; font-family: Arial, sans-serif !important; }
+                .title-ar  { font-size: 13pt; font-weight: bold; font-family: 'Tajawal','DejaVu Sans',sans-serif !important; direction: rtl; }
+
+                /* Header VAT/Address row */
+                .hdr-lbl    { font-size: 10pt; font-weight: bold; font-family: Arial, sans-serif !important; white-space: nowrap; }
+                .hdr-lbl-ar { font-size: 10pt; font-weight: bold; font-family: 'Tajawal','DejaVu Sans',sans-serif !important; white-space: nowrap; }
+                .hdr-val    { font-size: 10pt; font-family: Arial, sans-serif !important; }
+                .hdr-addr   { font-size: 10pt; font-family: 'Tajawal','DejaVu Sans',sans-serif !important; direction: rtl; text-align: right; line-height: 1.4; }
+
+                /* Bordered detail tables (Invoice / Customer) */
+                .lbl-en { font-size: 10pt; font-weight: bold; font-family: Arial, sans-serif !important;
+                          padding: 3px 4px; vertical-align: middle; white-space: nowrap; }
+                .lbl-ar { font-size: 10pt; font-weight: bold; font-family: 'Tajawal','DejaVu Sans',sans-serif !important;
+                          direction: rtl; text-align: right; padding: 3px 4px; vertical-align: middle; white-space: nowrap; }
+                .val-en { font-size: 10pt; font-family: Arial, sans-serif !important;
+                          padding: 3px 4px; vertical-align: middle; text-align: center; }
+                .val-ar { font-size: 10pt; font-family: 'Tajawal','DejaVu Sans',sans-serif !important;
+                          padding: 3px 4px; vertical-align: middle; text-align: center; direction: rtl; line-height: 1.3; }
+
+                /* Line Items grey bar — nowrap so EN/AR labels stay one line */
+                .li-bar-en { font-size: 9pt; font-weight: bold; font-family: Arial, sans-serif !important;
+                             color: #024d44; float: left; white-space: nowrap; }
+                .li-bar-ar { font-size: 9pt; font-weight: bold; font-family: 'Tajawal','DejaVu Sans',sans-serif !important;
+                             color: #024d44; float: right; direction: rtl; white-space: nowrap; }
+
+                /* Column headers — EN and AR paired, same size */
+                .col-hdr    { font-size: 9pt; font-weight: bold; font-family: Arial, sans-serif !important; }
+                .col-hdr-ar { font-size: 9pt; font-weight: bold; font-family: 'Tajawal','DejaVu Sans',sans-serif !important; }
+
+                /* Line item data rows */
+                .li-num     { font-size: 9pt; font-family: Arial, sans-serif !important; text-align: center; padding: 3px 2px; }
+                .li-desc    { font-size: 9pt; font-family: Arial, sans-serif !important; text-align: left;   padding: 3px 3px; }
+                .li-val     { font-size: 9pt; font-family: Arial, sans-serif !important; text-align: center; padding: 3px 2px; }
+                .li-val-ar  { font-size: 9pt; font-family: 'Tajawal','DejaVu Sans',sans-serif !important; text-align: center; padding: 3px 2px; }
+
+                /* Totals table */
+                .tot-hdr-en { font-size: 10pt; font-weight: bold; font-family: Arial, sans-serif !important; color: white; float: left; }
+                .tot-hdr-ar { font-size: 10pt; font-weight: bold; font-family: 'Tajawal','DejaVu Sans',sans-serif !important;
+                              color: white; float: right; direction: rtl; }
+                .tot-lbl-en { font-size: 10pt; font-weight: bold; font-family: Arial, sans-serif !important; }
+                .tot-lbl-ar { font-size: 10pt; font-weight: bold; font-family: 'Tajawal','DejaVu Sans',sans-serif !important;
+                              direction: rtl; text-align: right; }
+                .tot-val    { font-size: 10pt; font-family: Arial, sans-serif !important; }
+
+                /* Amount in words */
+                .amtw-en { font-size: 9pt; font-family: Arial, sans-serif !important; display: inline-block; white-space: nowrap; }
+                .amtw-ar { font-size: 9pt; font-family: 'Tajawal','DejaVu Sans',sans-serif !important;
+                           display: inline-block; white-space: nowrap; direction: rtl; margin-left: 20px; }
+
+                /* Signature footer */
+                .ftr-en { font-size: 10pt; font-weight: bold; font-family: Arial, sans-serif !important; }
+                .ftr-ar { font-size: 10pt; font-weight: bold; font-family: 'Tajawal','DejaVu Sans',sans-serif !important; }
+
+                /* Borders — solid 1px dark gray. wkhtmltopdf drops sub-pixel
+                   borders during real PDF print, so we use full 1px + a darker
+                   gray (#024d44) to ensure they always render. */
+                .bd  { border: 1px solid #024d44 !important; }
+                .no-t { border-top: none !important; }
+                .no-l { border-left: none !important; }
+                .bdr { border-right: 1px solid #024d44 !important; }
+
+                /* Colors */
+                .orange { background-color: #024d44; color: #fff; }
+                .orange th { border: 0.5px solid #024d44 !important; }
+                .orange th.bd { border: 0.5px solid #024d44 !important; }
+                .orange td { border: 0.5px solid #024d44 !important; }
+                .gray { background-color: #1a3134; color: #fff; }
+
+                /* SAR Currency Symbol */
+                .sar-symbol { width: 14px; height: 14px; display: inline-block; margin-right: 0px; vertical-align: middle; }
+            </style>
+
+            <div class="page wrap" style="direction:ltr;">
+
+                <!-- ═══════════════════════
+                     HEADER IMAGE
+                ════════════════════════ -->
+                <t t-if="o.company_id.invoice_header_image">
+                    <img t-att-src="image_data_uri(o.company_id.invoice_header_image)"
+                         style="width:100%; height:auto; display:block; margin:0 0 8px 0;" alt="Header"/>
+                </t>
+                <t t-elif="o.company_id.logo">
+                    <div style="text-align:center; padding:6px 0;">
+                        <img t-att-src="image_data_uri(o.company_id.logo)"
+                             style="max-width:100%; height:auto; max-height:100px; display:inline-block;" alt="Logo"/>
+                    </div>
+                </t>
+
+                <!-- ═══════════════════════════════════════════
+                     TITLE + QR CODE
+                     FIX: use o.env — "request" is NOT available
+                     in QWeb PDF rendering context on Odoo.sh
+                ════════════════════════════════════════════ -->
+                <table style="width:100%; table-layout:fixed; border-collapse:collapse; margin:0; border:none; direction:ltr;">
+                    <tr>
+                        <td style="width:18%; vertical-align:middle; padding:4px 0 4px 25px; text-align:left; border:none;">
+                            <t t-if="o.l10n_sa_qr_code_str">
+                                <img t-att-src="'/report/barcode/QR/' + o.l10n_sa_qr_code_str + '?width=600&amp;height=600'"
+                                     style="width:100px; height:100px; display:block; image-rendering:crisp-edges;"/>
+                            </t>
+                        </td>
+                        <td style="width:64%; vertical-align:middle; padding:8px 0; text-align:center; border:none;">
+                            <div class="title-en">Taxable Invoice</div>
+                            <div class="title-ar" style="margin-top:2px;">فاتورة ضريبية</div>
+                        </td>
+                        <td style="width:18%; border:none;"></td>
+                    </tr>
+                </table>
+
+
+                <!-- ════════════════════════════════════════
+                     INVOICE DETAILS (left) + CUSTOMER (right)
+                     Fixed-height rows — 36px for name/address, 22px for others
+                     Both tables: identical 20% | 57% | 23% columns, total 138px
+                ═════════════════════════════════════════ -->
+                <table style="width:100%; border-collapse:collapse; margin:0; direction:ltr; table-layout:fixed;">
+                    <tr style="vertical-align:top;">
+
+                        <!-- LEFT: Company / Invoice Details -->
+                        <td style="width:50%; padding:0 4px 0 0; vertical-align:top;">
+                            <table style="width:100%; border-collapse:collapse; direction:ltr; table-layout:fixed;">
+
+                                <!-- Row 1 — Invoice No. (2-line fixed) -->
+                                <tr style="height:36px;">
+                                    <td class="bd lbl-en" style="width:20%; text-align:left; vertical-align:middle; overflow:hidden;">Invoice No.:</td>
+                                    <td class="bd no-l val-en" style="width:57%; vertical-align:middle; overflow:hidden;">
+                                        <div style="height:36px; line-height:1.35; overflow:hidden; display:flex; align-items:center;">
+                                            <span t-field="o.name"/>
+                                        </div>
+                                    </td>
+                                    <td class="bd no-l lbl-ar" style="width:23%; border-right:1px solid #024d44 !important; vertical-align:middle; overflow:hidden;">رقم الفاتورة:</td>
+                                </tr>
+
+                                <!-- Row 2 — Issued Date (1-line fixed) -->
+                                <tr style="height:22px;">
+                                    <td class="bd no-t lbl-en" style="text-align:left; vertical-align:middle; overflow:hidden;">Issued Date:</td>
+                                    <td class="bd no-t no-l val-en" style="vertical-align:middle; overflow:hidden;">
+                                        <div style="height:22px; overflow:hidden; white-space:nowrap; display:flex; align-items:center;">
+                                            <span t-field="o.invoice_date"/>
+                                        </div>
+                                    </td>
+                                    <td class="bd no-t no-l lbl-ar" style="border-right:1px solid #024d44 !important; vertical-align:middle; overflow:hidden;">تاريخ الإصدار:</td>
+                                </tr>
+
+                                <!-- Row 3 — Company VAT (1-line fixed) -->
+                                <tr style="height:22px;">
+                                    <td class="bd no-t lbl-en" style="text-align:left; vertical-align:middle; overflow:hidden;">VAT #:</td>
+                                    <td class="bd no-t no-l val-en" style="vertical-align:middle; overflow:hidden;">
+                                        <div style="height:22px; overflow:hidden; white-space:nowrap; display:flex; align-items:center;">
+                                            <span t-field="o.company_id.vat"/>
+                                        </div>
+                                    </td>
+                                    <td class="bd no-t no-l lbl-ar" style="border-right:1px solid #024d44 !important; vertical-align:middle; overflow:hidden;">الرقم الضريبي:</td>
+                                </tr>
+
+                                <!-- Row 4 — Company Address (2-line fixed) -->
+                                <tr style="height:36px;">
+                                    <td class="bd no-t lbl-en" style="text-align:left; vertical-align:middle; overflow:hidden;">Address:</td>
+                                    <td class="bd no-t no-l val-ar" style="vertical-align:middle; overflow:hidden;">
+                                        <div style="height:36px; line-height:1.35; overflow:hidden;">
+                                            <t t-if="o.company_id.street"><span t-field="o.company_id.street"/></t>
+                                            <t t-if="o.company_id.street2">, <span t-field="o.company_id.street2"/></t>
+                                            <t t-if="o.company_id.city"><br/><span t-field="o.company_id.city"/></t>
+                                            <t t-if="o.company_id.zip"> <span t-field="o.company_id.zip"/></t>
+                                        </div>
+                                    </td>
+                                    <td class="bd no-t no-l lbl-ar" style="border-right:1px solid #024d44 !important; vertical-align:middle; overflow:hidden;">العنوان:</td>
+                                </tr>
+
+                                <!-- Row 5 — Company CR (1-line fixed) -->
+                                <tr style="height:22px;">
+                                    <td class="bd no-t lbl-en" style="text-align:left; vertical-align:middle; overflow:hidden;">CR No.:</td>
+                                    <td class="bd no-t no-l val-en" style="vertical-align:middle; overflow:hidden;">
+                                        <div style="height:22px; overflow:hidden; white-space:nowrap; display:flex; align-items:center;">
+                                            <span t-if="o.company_id.l10n_sa_edi_additional_identification_number"
+                                                  t-field="o.company_id.l10n_sa_edi_additional_identification_number"/>
+                                        </div>
+                                    </td>
+                                    <td class="bd no-t no-l lbl-ar" style="border-right:1px solid #024d44 !important; vertical-align:middle; overflow:hidden;">سجل التجاري:</td>
+                                </tr>
+
+                            </table>
+                        </td>
+
+                        <!-- RIGHT: Customer Details -->
+                        <td style="width:50%; padding:0 0 0 4px; vertical-align:top;">
+                            <table style="width:100%; border-collapse:collapse; direction:ltr; table-layout:fixed;">
+
+                                <!-- Row 1 — Customer name (2-line fixed) -->
+                                <tr style="height:36px;">
+                                    <td class="bd lbl-en" style="width:20%; text-align:left; vertical-align:middle; overflow:hidden;">Customer:</td>
+                                    <td class="bd no-l val-ar" style="width:57%; vertical-align:middle; overflow:hidden;">
+                                        <div style="height:36px; line-height:1.35; overflow:hidden; display:flex; align-items:center;">
+                                            <span t-field="o.partner_id.name"/>
+                                        </div>
+                                    </td>
+                                    <td class="bd no-l lbl-ar" style="width:23%; border-right:1px solid #024d44 !important; vertical-align:middle; overflow:hidden;">اسم العميل:</td>
+                                </tr>
+
+                                <!-- Row 2 — Customer VAT (1-line fixed) -->
+                                <tr style="height:22px;">
+                                    <td class="bd no-t lbl-en" style="text-align:left; vertical-align:middle; overflow:hidden;">VAT #:</td>
+                                    <td class="bd no-t no-l val-en" style="vertical-align:middle; overflow:hidden;">
+                                        <div style="height:22px; overflow:hidden; white-space:nowrap; display:flex; align-items:center;">
+                                            <span t-field="o.partner_id.vat"/>
+                                        </div>
+                                    </td>
+                                    <td class="bd no-t no-l lbl-ar" style="border-right:1px solid #024d44 !important; vertical-align:middle; overflow:hidden;">الرقم الضريبي:</td>
+                                </tr>
+
+                                <!-- Row 3 — Customer Address (2-line fixed) -->
+                                <tr style="height:36px;">
+                                    <td class="bd no-t lbl-en" style="text-align:left; vertical-align:middle; overflow:hidden;">Address:</td>
+                                    <td class="bd no-t no-l val-ar" style="vertical-align:middle; overflow:hidden;">
+                                        <div style="height:36px; line-height:1.35; overflow:hidden;">
+                                            <t t-if="o.partner_id.street"><span t-field="o.partner_id.street"/></t>
+                                            <t t-if="o.partner_id.street2">, <span t-field="o.partner_id.street2"/></t>
+                                            <t t-if="o.partner_id.city"><br/><span t-field="o.partner_id.city"/></t>
+                                            <t t-if="o.partner_id.zip"> <span t-field="o.partner_id.zip"/></t>
+                                        </div>
+                                    </td>
+                                    <td class="bd no-t no-l lbl-ar" style="border-right:1px solid #024d44 !important; vertical-align:middle; overflow:hidden;">العنوان الوطني:</td>
+                                </tr>
+
+                                <!-- Row 4 — Customer CR (1-line fixed) -->
+                                <tr style="height:22px;">
+                                    <td class="bd no-t lbl-en" style="text-align:left; vertical-align:middle; overflow:hidden;">CR No.:</td>
+                                    <td class="bd no-t no-l val-en" style="vertical-align:middle; overflow:hidden;">
+                                        <div style="height:22px; overflow:hidden; white-space:nowrap; display:flex; align-items:center;">
+                                            <span t-if="o.partner_id.l10n_sa_edi_additional_identification_number"
+                                                  t-field="o.partner_id.l10n_sa_edi_additional_identification_number"/>
+                                        </div>
+                                    </td>
+                                    <td class="bd no-t no-l lbl-ar" style="border-right:1px solid #024d44 !important; vertical-align:middle; overflow:hidden;">سجل التجاري:</td>
+                                </tr>
+
+                                <!-- Row 5 — Tel (1-line fixed) -->
+                                <tr style="height:22px;">
+                                    <td class="bd no-t lbl-en" style="text-align:left; vertical-align:middle; overflow:hidden;">Tel:</td>
+                                    <td class="bd no-t no-l val-en" style="vertical-align:middle; overflow:hidden;">
+                                        <div style="height:22px; overflow:hidden; white-space:nowrap; display:flex; align-items:center;">
+                                            <span t-if="o.partner_id.phone" t-field="o.partner_id.phone"/>
+                                        </div>
+                                    </td>
+                                    <td class="bd no-t no-l lbl-ar" style="border-right:1px solid #024d44 !important; vertical-align:middle; overflow:hidden;">الهاتف:</td>
+                                </tr>
+
+                            </table>
+                        </td>
+
+                    </tr>
+                </table>
+
+                <!-- ═══════════════════════
+                     LINE ITEMS TABLE
+                ════════════════════════ -->
+                <table style="width:100%; border-collapse:collapse; margin:0; direction:ltr; border-right:1px solid #024d44 !important; border-bottom:1px solid #024d44 !important;">
+                    <thead class="orange">
+                        <tr>
+                            <th class="bd col-hdr" style="padding:4px 3px; text-align:center; width:4%;">
+                                No.<br/><span class="col-hdr-ar">م.</span>
+                            </th>
+                            <th class="bd no-l col-hdr" style="padding:4px 3px; text-align:center; width:9%;">
+                                Item No.<br/><span class="col-hdr-ar">رقم المادة</span>
+                            </th>
+                            <th class="bd no-l col-hdr" style="padding:4px 3px; text-align:center; width:22%;">
+                                Description<br/><span class="col-hdr-ar">البيان</span>
+                            </th>
+                            <th class="bd no-l col-hdr" style="padding:4px 3px; text-align:center; width:6%;">
+                                Qty<br/><span class="col-hdr-ar">الكمية</span>
+                            </th>
+                            <th class="bd no-l col-hdr" style="padding:4px 3px; text-align:center; width:7%;">
+                                Unit<br/><span class="col-hdr-ar">الوحدة</span>
+                            </th>
+                            <th class="bd no-l col-hdr" style="padding:4px 3px; text-align:center; width:10%;">
+                                Price<br/><span class="col-hdr-ar">السعر</span>
+                            </th>
+                            <th class="bd no-l col-hdr" style="padding:4px 3px; text-align:center; width:7%;">
+                                Disc %<br/><span class="col-hdr-ar">الخصم %</span>
+                            </th>
+                            <th class="bd no-l col-hdr" style="padding:4px 3px; text-align:center; width:13%;">
+                                Taxable Amount<br/><span class="col-hdr-ar">المبلغ الخاضع للضريبة</span>
+                            </th>
+                            <th class="bd no-l col-hdr" style="padding:4px 3px; text-align:center; width:8%;">
+                                Tax<br/><span class="col-hdr-ar">ضريبة ق.م</span>
+                            </th>
+                            <th class="bd no-l col-hdr" style="padding:4px 3px; text-align:center; width:10%; border-right:1px solid #024d44 !important;">
+                                Total Price<br/><span class="col-hdr-ar">السعر الإجمالي</span>
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <t t-foreach="o.invoice_line_ids.filtered(lambda l: l.display_type not in ('line_section','line_note') and l.product_id)" t-as="line">
+                            <tr>
+                                <td class="bd no-t li-num"><t t-esc="line_index + 1"/></td>
+                                <td class="bd no-t no-l li-num">
+                                    <span t-esc="line.product_id.default_code or ''"/>
+                                </td>
+                                <td class="bd no-t no-l li-desc">
+                                    <span t-esc="(line.name or '').split('\n')[0]"/>
+                                </td>
+                                <td class="bd no-t no-l li-val">
+                                    <span t-field="line.quantity"/>
+                                </td>
+                                <td class="bd no-t no-l li-val-ar">
+                                    <t t-if="line.product_uom_id"><span t-field="line.product_uom_id.name"/></t>
+                                </td>
+                                <td class="bd no-t no-l li-val" style="text-align:right;">
+                                    <img src="/corepulse_tax_invoice_print/static/images/sar_symbol.svg" class="sar-symbol" alt="SAR"/>
+                                    <span t-esc="'%.2f' % line.price_unit"/>
+                                </td>
+                                <td class="bd no-t no-l li-val" style="text-align:center;">
+                                    <span t-esc="'%.1f' % (line.discount or 0.0) + '%'"/>
+                                </td>
+                                <td class="bd no-t no-l li-val" style="text-align:right;">
+                                    <img src="/corepulse_tax_invoice_print/static/images/sar_symbol.svg" class="sar-symbol" alt="SAR"/>
+                                    <span t-esc="'{:,.2f}'.format(line.price_subtotal)"/>
+                                </td>
+                                <td class="bd no-t no-l li-val" style="text-align:right;">
+                                    <img src="/corepulse_tax_invoice_print/static/images/sar_symbol.svg" class="sar-symbol" alt="SAR"/>
+                                    <t t-set="tax_amt" t-value="line.price_total - line.price_subtotal"/>
+                                    <span t-esc="'{:,.2f}'.format(tax_amt)"/>
+                                </td>
+                                <td class="bd no-t no-l li-val" style="text-align:right; border-right:1px solid #024d44 !important;">
+                                    <img src="/corepulse_tax_invoice_print/static/images/sar_symbol.svg" class="sar-symbol" alt="SAR"/>
+                                    <span t-esc="'{:,.2f}'.format(line.price_total)"/>
+                                </td>
+                            </tr>
+                        </t>
+                    </tbody>
+                </table>
+
+                <!-- ═══════════════════════
+                     TOTALS
+                ════════════════════════ -->
+                <table style="width:100%; border-collapse:collapse; margin-top:10px; direction:ltr; border-right:1px solid #024d44 !important; border-bottom:1px solid #024d44 !important;">
+                    <thead>
+                        <tr>
+                            <th colspan="3" style="background-color:#024d44; padding:0; border:none;">
+                                <div style="padding:5px 10px; direction:ltr; overflow:hidden; background-color:#024d44;">
+                                    <span class="tot-hdr-en">Total amounts (SR):</span>
+                                    <span class="tot-hdr-ar">إجمالي المبالغ ( ريال سعودي):</span>
+                                </div>
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="bd no-t tot-lbl-en" style="padding:4px 8px; width:40%; text-align:left;">Total (Excluding VAT):</td>
+                            <td class="bd no-t no-l tot-val" style="padding:4px 8px; width:20%; text-align:right;">
+                                <img src="/corepulse_tax_invoice_print/static/images/sar_symbol.svg" class="sar-symbol" alt="SAR"/>
+                                <span t-esc="'{:,.2f}'.format(o.amount_untaxed)"/>
+                            </td>
+                            <td class="bd no-t no-l tot-lbl-ar" style="padding:4px 8px; width:40%; border-right:1px solid #024d44 !important;">الإجمالي (غير شاملة ض.ق.م):</td>
+                        </tr>
+                        <tr>
+                            <td class="bd no-t tot-lbl-en" style="padding:4px 8px; text-align:left;">Discount:</td>
+                            <td class="bd no-t no-l tot-val" style="padding:4px 8px; text-align:right;">
+                                <img src="/corepulse_tax_invoice_print/static/images/sar_symbol.svg" class="sar-symbol" alt="SAR"/>
+                                <t t-set="total_discount_amount" t-value="sum(o.invoice_line_ids.filtered(lambda l: l.display_type not in ('line_section','line_note')).mapped(lambda l: l.price_unit * l.quantity * l.discount / 100.0))"/>
+                                <span t-esc="'{:,.2f}'.format(total_discount_amount) if total_discount_amount else '0.00'"/>
+                            </td>
+                            <td class="bd no-t no-l tot-lbl-ar" style="padding:4px 8px; border-right:1px solid #024d44 !important;">إجمالي الخصومات:</td>
+                        </tr>
+                        <tr>
+                            <td class="bd no-t tot-lbl-en" style="padding:4px 8px; text-align:left;">Total Taxable Amount (Excluding VAT):</td>
+                            <td class="bd no-t no-l tot-val" style="padding:4px 8px; text-align:right;">
+                                <img src="/corepulse_tax_invoice_print/static/images/sar_symbol.svg" class="sar-symbol" alt="SAR"/>
+                                <span t-esc="'{:,.2f}'.format(o.amount_untaxed)"/>
+                            </td>
+                            <td class="bd no-t no-l tot-lbl-ar" style="padding:4px 8px; border-right:1px solid #024d44 !important;">الإجمالي الخاضع للضريبة (غير شاملة ض.ق.م):</td>
+                        </tr>
+                        <tr>
+                            <td class="bd no-t tot-lbl-en" style="padding:4px 8px; text-align:left;">Total VAT 15%:</td>
+                            <td class="bd no-t no-l tot-val" style="padding:4px 8px; text-align:right;">
+                                <img src="/corepulse_tax_invoice_print/static/images/sar_symbol.svg" class="sar-symbol" alt="SAR"/>
+                                <span t-esc="'{:,.2f}'.format(o.amount_tax)"/>
+                            </td>
+                            <td class="bd no-t no-l tot-lbl-ar" style="padding:4px 8px; border-right:1px solid #024d44 !important;">مجموع ض.ق.م 15%:</td>
+                        </tr>
+                        <tr>
+                            <td class="bd no-t tot-lbl-en" style="padding:4px 8px; text-align:left;">Total (Including VAT):</td>
+                            <td class="bd no-t no-l tot-val" style="padding:4px 8px; text-align:right;">
+                                <img src="/corepulse_tax_invoice_print/static/images/sar_symbol.svg" class="sar-symbol" alt="SAR"/>
+                                <span t-esc="'{:,.2f}'.format(o.amount_total)"/>
+                            </td>
+                            <td class="bd no-t no-l tot-lbl-ar" style="padding:4px 8px; border-right:1px solid #024d44 !important;">الإجمالي (شاملة ض.ق.م):</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <!-- Amount in words -->
+                <div style="margin:5px 0 8px 0; direction:ltr; text-align:center; overflow:hidden;">
+                    <t t-set="amount_en" t-value="o.with_context(lang='en_US').currency_id.amount_to_text(o.with_context(lang='en_US').amount_total).upper()"/>
+                    <t t-set="amount_ar" t-value="o.with_context(lang='ar_001').currency_id.amount_to_text(o.with_context(lang='ar_001').amount_total)"/>
+                    <span class="amtw-en"><t t-esc="amount_en"/></span>
+                    <span class="amtw-ar"><t t-esc="amount_ar"/></span>
+                </div>
+
+
+
+            </div>
+        </t>
+    </template>
+</odoo>

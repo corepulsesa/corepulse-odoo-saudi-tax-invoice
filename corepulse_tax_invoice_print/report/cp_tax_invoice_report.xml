@@ -1,0 +1,546 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- ════════════════════════════════════════
+         Paper format
+    ════════════════════════════════════════ -->
+    <record id="paperformat_cp_tax_invoice" model="report.paperformat">
+        <field name="name">CP Tax Invoice Format</field>
+        <field name="default" eval="False"/>
+        <field name="format">A4</field>
+        <field name="orientation">Portrait</field>
+        <field name="margin_top">5</field>
+        <field name="margin_bottom">40</field>
+        <field name="margin_left">10</field>
+        <field name="margin_right">10</field>
+        <field name="header_line" eval="False"/>
+        <field name="header_spacing">0</field>
+        <field name="dpi">90</field>
+    </record>
+
+    <!-- ════════════════════════════════════════
+         Report action
+    ════════════════════════════════════════ -->
+    <record id="account_invoices_cp_tax" model="ir.actions.report">
+        <field name="name">CP Tax Invoice</field>
+        <field name="model">account.move</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">corepulse_tax_invoice_print.report_cp_tax_invoice_document</field>
+        <field name="report_file">corepulse_tax_invoice_print.report_cp_tax_invoice_document</field>
+        <field name="print_report_name">'CP Tax Invoice - %s' % (object.name)</field>
+        <field name="binding_model_id" ref="account.model_account_move"/>
+        <field name="binding_type">report</field>
+        <field name="paperformat_id" ref="paperformat_cp_tax_invoice"/>
+    </record>
+
+    <!-- ════════════════════════════════════════
+         Container (outer loop)
+    ════════════════════════════════════════ -->
+    <template id="report_cp_tax_invoice_document">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="o">
+                <t t-call="corepulse_tax_invoice_print.report_cp_tax_invoice_layout"
+                   t-lang="o.partner_id.lang"/>
+            </t>
+        </t>
+    </template>
+
+    <!-- ════════════════════════════════════════
+         Main layout
+    ════════════════════════════════════════ -->
+    <template id="report_cp_tax_invoice_layout">
+        <t t-call="web.basic_layout">
+            <style>article.page, div.page { border: none !important; box-shadow: none !important; }</style>
+            <t t-set="o" t-value="o.with_context(lang='en_US')"/>
+            <t t-set="data_report_margin_bottom" t-value="40"/>
+
+            <!-- ── Fixed footer (repeats on every page) ── -->
+            <div t-attf-class="footer o_background_footer" style="margin:0; padding:0 0 6px 0;">
+                <t t-if="o.company_id.invoice_footer_image">
+                    <img t-att-src="image_data_uri(o.company_id.invoice_footer_image)"
+                         style="width:100%; height:auto; display:block;" alt="Footer"/>
+                </t>
+            </div>
+
+            <style>
+                @font-face {
+                    font-family: 'Tajawal';
+                    src: url('/corepulse_tax_invoice_print/static/fonts/Tajawal-Regular.ttf') format('truetype');
+                    font-weight: 400;
+                }
+                @font-face {
+                    font-family: 'Tajawal';
+                    src: url('/corepulse_tax_invoice_print/static/fonts/Tajawal-Bold.ttf') format('truetype');
+                    font-weight: 700;
+                }
+
+                @page { margin: 0mm; }
+                * { box-sizing: border-box; }
+                .page, .card, .card-body, .container-fluid, .container {
+                    border: 0 !important; box-shadow: none !important;
+                    padding: 0 !important; margin: 0 !important;
+                }
+                body { font-family: Arial, sans-serif !important; font-size: 9.5pt; color: #000; }
+                .cp-wrap { padding: 0 10px; font-family: Arial, sans-serif !important; }
+                table { border-collapse: collapse; }
+                ol, ul, li { list-style: none !important; }
+
+                /* ── Arabic ── */
+                .ar { font-family: 'Tajawal','DejaVu Sans',sans-serif !important; direction: rtl; }
+
+                /* ── Brand colours ── */
+                .cp-bg-primary   { background-color: #024d44; color: #fff; }
+                .cp-bg-secondary { background-color: #1a3134; color: #fff; }
+                .cp-bg-light     { background-color: #eaf7f4; }
+                .cp-border       { border: 1px solid #024d44 !important; }
+                .cp-border-t     { border-top: 1px solid #024d44 !important; }
+                .cp-border-b     { border-bottom: 1px solid #024d44 !important; }
+                .cp-border-l     { border-left: 1px solid #024d44 !important; }
+                .cp-border-r     { border-right: 1px solid #024d44 !important; }
+                .cp-text-primary { color: #024d44; }
+
+                /* ── Title ── */
+                .cp-title-en { font-size: 15pt; font-weight: bold; font-family: Arial,sans-serif; }
+                .cp-title-ar { font-size: 15pt; font-weight: bold; font-family: 'Tajawal','DejaVu Sans',sans-serif; direction: rtl; }
+
+                /* ── Invoice meta table ── */
+                .cp-meta td { font-size: 9.5pt; padding: 5px 8px; vertical-align: middle; }
+                .cp-meta .lbl { font-weight: bold; background: #eaf7f4; white-space: nowrap; }
+                .cp-meta .lbl-ar { font-family: 'Tajawal','DejaVu Sans',sans-serif; direction: rtl; text-align: right; }
+                .cp-meta .val { }
+                .cp-meta .val-ar { font-family: 'Tajawal','DejaVu Sans',sans-serif; direction: rtl; text-align: right; }
+
+                /* ── Seller / Buyer table ── */
+                .cp-party th {
+                    background: #024d44; color: #fff;
+                    font-size: 8.5pt; font-weight: bold; padding: 5px 6px;
+                    text-align: left; white-space: nowrap;
+                }
+                .cp-party th.ar-hdr {
+                    font-family: 'Tajawal','DejaVu Sans',sans-serif;
+                    text-align: right; direction: rtl;
+                }
+                /* value cell: auto width — takes all remaining space */
+                .cp-party td { font-size: 9pt; padding: 4px 6px; vertical-align: middle; }
+                .cp-party td.lbl  { font-size: 8pt; font-weight: bold; width: 1%; white-space: nowrap; background: #eaf7f4; }
+                .cp-party td.val  { width: auto; overflow: hidden; vertical-align: middle; text-align: center; }
+                .cp-party td.lbl-ar {
+                    font-family: 'Tajawal','DejaVu Sans',sans-serif;
+                    direction: rtl; text-align: right;
+                    font-size: 8pt; font-weight: bold; background: #eaf7f4; white-space: nowrap; width: 1%;
+                }
+                /* spacer column between Seller and Buyer in the unified table */
+                .cp-spacer { width: 8px !important; border: none !important; background: transparent !important; padding: 0 !important; }
+
+                /* ── Line items ── */
+                .cp-lines th {
+                    background: #024d44; color: #fff;
+                    padding: 4px 4px; font-size: 8.5pt; font-weight: bold;
+                    text-align: center; vertical-align: middle;
+                    border: 0.5px solid #024d44;
+                }
+                .cp-lines th .ar { font-family: 'Tajawal','DejaVu Sans',sans-serif; display: block; font-weight: normal; font-size: 8pt; }
+                .cp-lines td { border: 1px solid #024d44; padding: 3px 5px; font-size: 9pt; vertical-align: middle; }
+                .cp-center { text-align: center; }
+                .cp-right  { text-align: right; }
+                .cp-left   { text-align: left; }
+                .cp-num    { font-family: Arial, sans-serif; white-space: nowrap; }
+
+                /* ── Totals ── */
+                .cp-totals td { font-size: 9.5pt; padding: 4px 8px; vertical-align: middle; }
+                .cp-totals .tot-lbl { font-weight: bold; text-align: left; }
+                /* regular rows: AR floats right, EN floats left — same line */
+                .cp-totals .tot-lbl-ar { font-family: 'Tajawal','DejaVu Sans',sans-serif; direction: rtl; font-weight: bold; font-size: 9pt; float: right; }
+                .cp-totals .tot-lbl-en { font-weight: bold; font-size: 9pt; float: left; }
+                .cp-totals .tot-val { text-align: right; font-family: Arial, sans-serif; }
+                /* grand total row: AR floats right, EN floats left — same line */
+                .cp-totals .grand-lbl  { font-weight: bold; font-size: 10.5pt; color: #024d44; }
+                .cp-totals .grand-val  { font-weight: bold; font-size: 10.5pt; color: #024d44; text-align: right; }
+                .cp-totals .grand-lbl-ar { font-family: 'Tajawal','DejaVu Sans',sans-serif; direction: rtl; font-weight: bold; font-size: 10.5pt; color: #024d44; float: right; }
+                .cp-totals .grand-lbl-en { font-weight: bold; font-size: 10.5pt; color: #024d44; float: left; }
+
+                /* ── Amount words ── */
+                .cp-words { font-size: 9pt; text-align: center; margin: 6px 0 4px; }
+
+                /* ── SAR symbol ── */
+                .sar { width: 13px; height: 13px; display: inline-block; vertical-align: middle; margin-right: 1px; }
+
+                /* ── QR — no border anywhere ── */
+                .cp-qr-cell { border: none !important; outline: none !important; box-shadow: none !important; background: transparent; padding: 0 0 0 10px !important; }
+                .cp-qr-img  { border: 0 !important; outline: 0 !important; box-shadow: none !important; display: block; image-rendering: crisp-edges; background: #fff; }
+            </style>
+
+            <div class="page cp-wrap" style="direction:ltr;">
+
+                <!-- ══════════════════════════════════
+                     HEADER IMAGE
+                ══════════════════════════════════ -->
+                <t t-if="o.company_id.invoice_header_image">
+                    <img t-att-src="image_data_uri(o.company_id.invoice_header_image)"
+                         style="width:100%; height:auto; display:block; margin-bottom:8px;" alt="Header"/>
+                </t>
+                <t t-elif="o.company_id.logo">
+                    <div style="text-align:center; padding:6px 0;">
+                        <img t-att-src="image_data_uri(o.company_id.logo)"
+                             style="max-height:80px; width:auto; display:inline-block;" alt="Logo"/>
+                    </div>
+                </t>
+
+                <!-- ══════════════════════════════════
+                     TITLE
+                ══════════════════════════════════ -->
+                <div style="text-align:center; margin: 8px 0 10px;">
+                    <div class="cp-title-ar">فاتورة ضريبية</div>
+                    <div class="cp-title-en">Tax Invoice</div>
+                </div>
+
+                <!-- ══════════════════════════════════
+                     INVOICE META + QR CODE (single table, QR as rowspan-3 last column)
+                ══════════════════════════════════ -->
+                <table class="cp-meta" style="width:100%; border-collapse:collapse; direction:ltr; table-layout:fixed; margin-bottom:10px;">
+
+                    <!-- Invoice Number — row 1, QR spans rows 1-3 -->
+                    <tr>
+                        <td class="cp-border lbl" style="width:27%; height:38px; padding:5px 8px; vertical-align:middle;">Invoice Number:</td>
+                        <td class="cp-border" style="border-left:none !important; width:36%; height:38px; padding:5px 8px; text-align:center; vertical-align:middle; overflow:hidden; white-space:nowrap;">
+                            <span t-field="o.name"/>
+                        </td>
+                        <td class="cp-border lbl" style="border-left:none !important; width:25%; height:38px; padding:5px 8px; text-align:right; vertical-align:middle; direction:rtl; font-family:'Tajawal','DejaVu Sans',sans-serif;">رقم الفاتورة:</td>
+                        <!-- QR code spans all 3 rows -->
+                        <td rowspan="3" class="cp-border" style="border-left:none !important; width:130px; padding:4px; text-align:center; vertical-align:middle;">
+                            <t t-if="o.l10n_sa_qr_code_str">
+                                <img t-att-src="'/report/barcode/QR/' + o.l10n_sa_qr_code_str + '?width=600&amp;height=600'"
+                                     style="width:115px; height:115px; display:block; margin:0 auto; image-rendering:crisp-edges;"/>
+                            </t>
+                        </td>
+                    </tr>
+
+                    <!-- Issue Date -->
+                    <tr>
+                        <td class="cp-border lbl" style="border-top:none !important; height:38px; padding:5px 8px; vertical-align:middle;">Invoice Issue Date:</td>
+                        <td class="cp-border" style="border-left:none !important; border-top:none !important; height:38px; padding:5px 8px; text-align:center; vertical-align:middle; overflow:hidden; white-space:nowrap;">
+                            <span t-field="o.invoice_date"/>
+                        </td>
+                        <td class="cp-border lbl" style="border-left:none !important; border-top:none !important; height:38px; padding:5px 8px; text-align:right; vertical-align:middle; direction:rtl; font-family:'Tajawal','DejaVu Sans',sans-serif;">تاريخ إصدار الفاتورة:</td>
+                    </tr>
+
+                    <!-- Date of Supply -->
+                    <tr>
+                        <td class="cp-border lbl" style="border-top:none !important; height:38px; padding:5px 8px; vertical-align:middle;">Date of Supply:</td>
+                        <td class="cp-border" style="border-left:none !important; border-top:none !important; height:38px; padding:5px 8px; text-align:center; vertical-align:middle; overflow:hidden; white-space:nowrap;">
+                            <span t-field="o.invoice_date"/>
+                        </td>
+                        <td class="cp-border lbl" style="border-left:none !important; border-top:none !important; height:38px; padding:5px 8px; text-align:right; vertical-align:middle; direction:rtl; font-family:'Tajawal','DejaVu Sans',sans-serif;">تاريخ التوريد:</td>
+                    </tr>
+
+                </table>
+
+                <!-- ══════════════════════════════════
+                     SELLER + BUYER — single unified table: same <tr> = guaranteed equal height
+                     Columns: [S-lbl | S-val | S-ar-lbl | spacer | B-lbl | B-val | B-ar-lbl]
+                ══════════════════════════════════ -->
+                <table class="cp-party" style="width:100%; border-collapse:collapse; direction:ltr; margin-bottom:10px; border-left:1px solid #024d44; border-right:1px solid #024d44;">
+                    <thead>
+                        <tr>
+                            <th class="cp-border-t cp-border-b cp-border-l" style="white-space:nowrap; text-align:left;">Seller:</th>
+                            <th class="cp-border-t cp-border-b" style="width:38%;"></th>
+                            <th class="cp-border-t cp-border-b cp-border-r ar-hdr" style="white-space:nowrap;">المورد:</th>
+                            <th class="cp-spacer"></th>
+                            <th class="cp-border-t cp-border-b cp-border-l" style="white-space:nowrap; text-align:left;">Buyer:</th>
+                            <th class="cp-border-t cp-border-b" style="width:38%;"></th>
+                            <th class="cp-border-t cp-border-b cp-border-r ar-hdr" style="white-space:nowrap;">العميل:</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+
+                        <!-- Name -->
+                        <tr>
+                            <td class="lbl cp-border-t cp-border-l">Name:</td>
+                            <td class="val cp-border-t cp-border-l cp-border-r"><span t-esc="o.company_id.name or ''"/></td>
+                            <td class="lbl-ar cp-border-t cp-border-r">الاسم:</td>
+                            <td class="cp-spacer"></td>
+                            <td class="lbl cp-border-t cp-border-l">Name:</td>
+                            <td class="val cp-border-t cp-border-l cp-border-r"><span t-esc="o.partner_id.name or ''"/></td>
+                            <td class="lbl-ar cp-border-t cp-border-r">الاسم:</td>
+                        </tr>
+
+                        <!-- Building No. (show if either side has it) -->
+                        <t t-if="('l10n_sa_building_no' in o.company_id._fields and o.company_id.l10n_sa_building_no) or ('l10n_sa_building_no' in o.partner_id._fields and o.partner_id.l10n_sa_building_no)">
+                        <tr>
+                            <td class="lbl cp-border-t cp-border-l">Building No.:</td>
+                            <td class="val cp-border-t cp-border-l cp-border-r">
+                                <t t-if="'l10n_sa_building_no' in o.company_id._fields"><span t-field="o.company_id.l10n_sa_building_no"/></t>
+                            </td>
+                            <td class="lbl-ar cp-border-t cp-border-r">رقم المبنى:</td>
+                            <td class="cp-spacer"></td>
+                            <td class="lbl cp-border-t cp-border-l">Building No.:</td>
+                            <td class="val cp-border-t cp-border-l cp-border-r">
+                                <t t-if="'l10n_sa_building_no' in o.partner_id._fields"><span t-field="o.partner_id.l10n_sa_building_no"/></t>
+                            </td>
+                            <td class="lbl-ar cp-border-t cp-border-r">رقم المبنى:</td>
+                        </tr>
+                        </t>
+
+                        <!-- Street Name -->
+                        <tr>
+                            <td class="lbl cp-border-t cp-border-l">Street Name:</td>
+                            <td class="val cp-border-t cp-border-l cp-border-r"><span t-esc="o.company_id.street or ''"/></td>
+                            <td class="lbl-ar cp-border-t cp-border-r">اسم الشارع:</td>
+                            <td class="cp-spacer"></td>
+                            <td class="lbl cp-border-t cp-border-l">Street Name:</td>
+                            <td class="val cp-border-t cp-border-l cp-border-r"><span t-esc="o.partner_id.street or ''"/></td>
+                            <td class="lbl-ar cp-border-t cp-border-r">اسم الشارع:</td>
+                        </tr>
+
+                        <!-- District -->
+                        <tr>
+                            <td class="lbl cp-border-t cp-border-l">District:</td>
+                            <td class="val cp-border-t cp-border-l cp-border-r"><span t-esc="o.company_id.street2 or ''"/></td>
+                            <td class="lbl-ar cp-border-t cp-border-r">الحي:</td>
+                            <td class="cp-spacer"></td>
+                            <td class="lbl cp-border-t cp-border-l">District:</td>
+                            <td class="val cp-border-t cp-border-l cp-border-r"><span t-esc="o.partner_id.street2 or ''"/></td>
+                            <td class="lbl-ar cp-border-t cp-border-r">الحي:</td>
+                        </tr>
+
+                        <!-- City -->
+                        <tr>
+                            <td class="lbl cp-border-t cp-border-l">City:</td>
+                            <td class="val cp-border-t cp-border-l cp-border-r"><span t-esc="o.company_id.city or ''"/></td>
+                            <td class="lbl-ar cp-border-t cp-border-r">المدينة:</td>
+                            <td class="cp-spacer"></td>
+                            <td class="lbl cp-border-t cp-border-l">City:</td>
+                            <td class="val cp-border-t cp-border-l cp-border-r"><span t-esc="o.partner_id.city or ''"/></td>
+                            <td class="lbl-ar cp-border-t cp-border-r">المدينة:</td>
+                        </tr>
+
+                        <!-- Country -->
+                        <tr>
+                            <td class="lbl cp-border-t cp-border-l">Country:</td>
+                            <td class="val cp-border-t cp-border-l cp-border-r"><span t-esc="o.company_id.country_id.name or ''"/></td>
+                            <td class="lbl-ar cp-border-t cp-border-r">البلد:</td>
+                            <td class="cp-spacer"></td>
+                            <td class="lbl cp-border-t cp-border-l">Country:</td>
+                            <td class="val cp-border-t cp-border-l cp-border-r"><span t-esc="o.partner_id.country_id.name or ''"/></td>
+                            <td class="lbl-ar cp-border-t cp-border-r">البلد:</td>
+                        </tr>
+
+                        <!-- Postal Code -->
+                        <tr>
+                            <td class="lbl cp-border-t cp-border-l">Postal Code:</td>
+                            <td class="val cp-border-t cp-border-l cp-border-r"><span t-esc="o.company_id.zip or ''"/></td>
+                            <td class="lbl-ar cp-border-t cp-border-r">الرمز البريدي:</td>
+                            <td class="cp-spacer"></td>
+                            <td class="lbl cp-border-t cp-border-l">Postal Code:</td>
+                            <td class="val cp-border-t cp-border-l cp-border-r"><span t-esc="o.partner_id.zip or ''"/></td>
+                            <td class="lbl-ar cp-border-t cp-border-r">الرمز البريدي:</td>
+                        </tr>
+
+                        <!-- Additional No. (show if either side has it) -->
+                        <t t-if="('l10n_sa_additional_identification_number' in o.company_id._fields and o.company_id.l10n_sa_additional_identification_number) or ('l10n_sa_additional_identification_number' in o.partner_id._fields and o.partner_id.l10n_sa_additional_identification_number)">
+                        <tr>
+                            <td class="lbl cp-border-t cp-border-l">Additional No.:</td>
+                            <td class="val cp-border-t cp-border-l cp-border-r">
+                                <t t-if="'l10n_sa_additional_identification_number' in o.company_id._fields"><span t-field="o.company_id.l10n_sa_additional_identification_number"/></t>
+                            </td>
+                            <td class="lbl-ar cp-border-t cp-border-r">الرقم الإضافي للعنوان:</td>
+                            <td class="cp-spacer"></td>
+                            <td class="lbl cp-border-t cp-border-l">Additional No.:</td>
+                            <td class="val cp-border-t cp-border-l cp-border-r">
+                                <t t-if="'l10n_sa_additional_identification_number' in o.partner_id._fields"><span t-field="o.partner_id.l10n_sa_additional_identification_number"/></t>
+                            </td>
+                            <td class="lbl-ar cp-border-t cp-border-r">الرقم الإضافي للعنوان:</td>
+                        </tr>
+                        </t>
+
+                        <!-- VAT Number -->
+                        <tr>
+                            <td class="lbl cp-border-t cp-border-b cp-border-l">VAT Number:</td>
+                            <td class="val cp-border-t cp-border-b cp-border-l cp-border-r"><span t-esc="o.company_id.vat or ''"/></td>
+                            <td class="lbl-ar cp-border-t cp-border-b cp-border-r">الرقم الضريبي:</td>
+                            <td class="cp-spacer"></td>
+                            <td class="lbl cp-border-t cp-border-b cp-border-l">VAT Number:</td>
+                            <td class="val cp-border-t cp-border-b cp-border-l cp-border-r"><span t-esc="o.partner_id.vat or ''"/></td>
+                            <td class="lbl-ar cp-border-t cp-border-b cp-border-r">الرقم الضريبي:</td>
+                        </tr>
+
+                        <!-- Other ID (show if either side has it) -->
+                        <t t-if="('l10n_sa_edi_additional_identification_number' in o.company_id._fields and o.company_id.l10n_sa_edi_additional_identification_number) or ('l10n_sa_edi_additional_identification_number' in o.partner_id._fields and o.partner_id.l10n_sa_edi_additional_identification_number)">
+                        <tr>
+                            <td class="lbl cp-border-t cp-border-b cp-border-l">Other Seller ID:</td>
+                            <td class="val cp-border-t cp-border-b cp-border-l cp-border-r">
+                                <t t-if="'l10n_sa_edi_additional_identification_number' in o.company_id._fields"><span t-field="o.company_id.l10n_sa_edi_additional_identification_number"/></t>
+                            </td>
+                            <td class="lbl-ar cp-border-t cp-border-b cp-border-r">معرف آخر:</td>
+                            <td class="cp-spacer"></td>
+                            <td class="lbl cp-border-t cp-border-b cp-border-l">Other Buyer ID:</td>
+                            <td class="val cp-border-t cp-border-b cp-border-l cp-border-r">
+                                <t t-if="'l10n_sa_edi_additional_identification_number' in o.partner_id._fields"><span t-field="o.partner_id.l10n_sa_edi_additional_identification_number"/></t>
+                            </td>
+                            <td class="lbl-ar cp-border-t cp-border-b cp-border-r">معرف آخر:</td>
+                        </tr>
+                        </t>
+
+                    </tbody>
+                </table>
+
+                <!-- ══════════════════════════════════
+                     LINE ITEMS TABLE
+                ══════════════════════════════════ -->
+                <table class="cp-lines" style="width:100%; border-collapse:collapse; margin-bottom:8px; direction:ltr;">
+                    <thead>
+                        <tr>
+                            <th style="width:4%;  border-right:0.5px solid #024d44;">
+                                No.<span class="ar">م.</span>
+                            </th>
+                            <th style="width:7%;  border-right:0.5px solid #024d44;">
+                                Item No.<span class="ar">رقم المادة</span>
+                            </th>
+                            <th style="width:28%; border-right:0.5px solid #024d44;">
+                                Description<span class="ar">البيان</span>
+                            </th>
+                            <th style="width:6%;  border-right:0.5px solid #024d44;">
+                                Qty<span class="ar">الكمية</span>
+                            </th>
+                            <th style="width:7%;  border-right:0.5px solid #024d44;">
+                                Unit<span class="ar">الوحدة</span>
+                            </th>
+                            <th style="width:10%; border-right:0.5px solid #024d44;">
+                                Price<span class="ar">السعر</span>
+                            </th>
+                            <th style="width:6%;  border-right:0.5px solid #024d44;">
+                                Disc%<span class="ar">الخصم%</span>
+                            </th>
+                            <th style="width:12%; border-right:0.5px solid #024d44;">
+                                Taxable Amount<span class="ar">المبلغ الخاضع</span>
+                            </th>
+                            <th style="width:8%;  border-right:0.5px solid #024d44;">
+                                Tax<span class="ar">ضريبة</span>
+                            </th>
+                            <th style="width:12%; border-right:1px solid #024d44 !important;">
+                                Total Price<span class="ar">السعر الإجمالي</span>
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <t t-foreach="o.invoice_line_ids.filtered(lambda l: l.display_type not in ('line_section','line_note') and l.product_id)" t-as="line">
+                            <tr>
+                                <td class="cp-center cp-num"><t t-esc="line_index + 1"/></td>
+                                <td class="cp-center cp-num">
+                                    <span t-esc="line.product_id.default_code or ''"/>
+                                </td>
+                                <td class="cp-left">
+                                    <span t-esc="(line.name or '').split('\n')[0]"/>
+                                </td>
+                                <td class="cp-center cp-num"><span t-field="line.quantity"/></td>
+                                <td class="cp-center">
+                                    <t t-if="line.product_uom_id"><span t-field="line.product_uom_id.name"/></t>
+                                </td>
+                                <td class="cp-right cp-num">
+                                    <img src="/corepulse_tax_invoice_print/static/images/sar_symbol.svg" class="sar" alt="SAR"/>
+                                    <span t-esc="'%.2f' % line.price_unit"/>
+                                </td>
+                                <td class="cp-center cp-num">
+                                    <span t-esc="'%.1f' % (line.discount or 0.0)"/>%
+                                </td>
+                                <td class="cp-right cp-num">
+                                    <img src="/corepulse_tax_invoice_print/static/images/sar_symbol.svg" class="sar" alt="SAR"/>
+                                    <span t-esc="'{:,.2f}'.format(line.price_subtotal)"/>
+                                </td>
+                                <td class="cp-right cp-num">
+                                    <img src="/corepulse_tax_invoice_print/static/images/sar_symbol.svg" class="sar" alt="SAR"/>
+                                    <t t-set="tax_amt" t-value="line.price_total - line.price_subtotal"/>
+                                    <span t-esc="'{:,.2f}'.format(tax_amt)"/>
+                                </td>
+                                <td class="cp-right cp-num">
+                                    <img src="/corepulse_tax_invoice_print/static/images/sar_symbol.svg" class="sar" alt="SAR"/>
+                                    <span t-esc="'{:,.2f}'.format(line.price_total)"/>
+                                </td>
+                            </tr>
+                        </t>
+                    </tbody>
+                </table>
+
+                <!-- ══════════════════════════════════
+                     TOTALS TABLE
+                     Label cell: Arabic (line 1) + English (line 2)
+                ══════════════════════════════════ -->
+                <table class="cp-totals cp-border" style="width:60%; margin-left:40%; border-collapse:collapse; direction:ltr;">
+                    <thead>
+                        <tr>
+                            <th colspan="2" class="cp-bg-primary" style="padding:5px 10px; text-align:left; font-size:9.5pt;">
+                                <span style="float:right; font-family:'Tajawal','DejaVu Sans',sans-serif; font-weight:normal; direction:rtl;">إجمالي المبالغ (ريال سعودي)</span>
+                                <span style="float:left;">Total amounts (SAR)</span>
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="cp-border" style="width:65%;">
+                                <span class="tot-lbl-ar">الإجمالي (غير شاملة ض.ق.م)</span>
+                                <span class="tot-lbl-en">Total (Excl. VAT):</span>
+                            </td>
+                            <td class="cp-border tot-val" style="width:35%;">
+                                <img src="/corepulse_tax_invoice_print/static/images/sar_symbol.svg" class="sar" alt="SAR"/>
+                                <span t-esc="'{:,.2f}'.format(o.amount_untaxed)"/>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="cp-border">
+                                <span class="tot-lbl-ar">إجمالي الخصومات</span>
+                                <span class="tot-lbl-en">Discount:</span>
+                            </td>
+                            <td class="cp-border tot-val">
+                                <img src="/corepulse_tax_invoice_print/static/images/sar_symbol.svg" class="sar" alt="SAR"/>
+                                <t t-set="disc_total" t-value="sum(o.invoice_line_ids.filtered(lambda l: l.display_type not in ('line_section','line_note')).mapped(lambda l: l.price_unit * l.quantity * l.discount / 100.0))"/>
+                                <span t-esc="'{:,.2f}'.format(disc_total) if disc_total else '0.00'"/>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="cp-border" style="overflow:hidden;">
+                                <span class="tot-lbl-ar">الإجمالي الخاضع للضريبة</span>
+                                <span class="tot-lbl-en">Total (Excl. VAT):</span>
+                            </td>
+                            <td class="cp-border tot-val">
+                                <img src="/corepulse_tax_invoice_print/static/images/sar_symbol.svg" class="sar" alt="SAR"/>
+                                <span t-esc="'{:,.2f}'.format(o.amount_untaxed)"/>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="cp-border">
+                                <span class="tot-lbl-ar">مجموع ض.ق.م 15%</span>
+                                <span class="tot-lbl-en">Total VAT 15%:</span>
+                            </td>
+                            <td class="cp-border tot-val">
+                                <img src="/corepulse_tax_invoice_print/static/images/sar_symbol.svg" class="sar" alt="SAR"/>
+                                <span t-esc="'{:,.2f}'.format(o.amount_tax)"/>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="cp-border" style="background:#eaf7f4; overflow:hidden;">
+                                <span class="grand-lbl-ar">الإجمالي (شاملة ض.ق.م)</span>
+                                <span class="grand-lbl-en">Total (Incl. VAT):</span>
+                            </td>
+                            <td class="cp-border grand-val" style="background:#eaf7f4;">
+                                <img src="/corepulse_tax_invoice_print/static/images/sar_symbol.svg" class="sar" alt="SAR"/>
+                                <span t-esc="'{:,.2f}'.format(o.amount_total)"/>
+                            </td>
+                        </tr>
+
+                        <!-- Amount in words — last row inside totals table -->
+                        <tr>
+                            <td colspan="2" class="cp-border" style="padding:5px 8px; text-align:center; font-size:8.5pt; background:#f5fbf9;">
+                                <t t-set="amount_en" t-value="o.with_context(lang='en_US').currency_id.amount_to_text(o.with_context(lang='en_US').amount_total).upper()"/>
+                                <t t-set="amount_ar" t-value="o.with_context(lang='ar_001').currency_id.amount_to_text(o.with_context(lang='ar_001').amount_total)"/>
+                                <span style="font-family:'Tajawal','DejaVu Sans',sans-serif; direction:rtl; display:block;"><t t-esc="amount_ar"/></span>
+                                <span style="font-family:Arial,sans-serif; display:block; margin-top:2px;"><t t-esc="amount_en"/></span>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+
+            </div>
+        </t>
+    </template>
+
+</odoo>
