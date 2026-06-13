@@ -3,7 +3,7 @@
 # -*- coding: utf-8 -*-
 
 {
-    'name': 'Custom Invoice Print',
+    'name': 'Saudi Tax Invoice — ZATCA Phase 2 | Bilingual | SAR Symbol | Custom Header & Footer',
     'version': '19.0.1.0.0',
     'category': 'Accounting/Localizations',
     'author': 'CorePulse',
@@ -25,4 +25,6 @@
     'installable': True,
     'auto_install': False,
     'license': 'OPL-1',
+    'price': 85.99,
+    'currency': 'USD',
 }
