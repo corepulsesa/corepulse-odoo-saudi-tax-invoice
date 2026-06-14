@@ -27,4 +27,5 @@
     'license': 'OPL-1',
     'price': 85.99,
     'currency': 'USD',
+    'images': ['static/description/banner.png'],
 }
